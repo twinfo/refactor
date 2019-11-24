@@ -29,78 +29,91 @@ public class Prototype {
 		invoicesMap.put("performances", invoicesList);
 	}
 
+	//准备数据，传递给renderPlainText
 	public String statement() {
-		// 6.1 拆分阶段：提炼函数
-		ResultData data = new ResultData();
-		List<Performances> performances = createPerformancesData();
-		data.setPerformances(performances);
-		data.setCustomer((String) invoicesMap.get("customer"));
-		return renderPlainText(data);
+		return renderPlainText(createResultData());
 	}
 
+	// 替换原有调用点
 	private String renderPlainText(ResultData data) {
 		String result = "Statement for " + data.getCustomer() + "\n";
 		for (Performances performances : data.getPerformances()) {
 			result += "  " + performances.getPlays().getName() + ": " + performances.getAmount() / 100 + "￥("
 					+ performances.getPerf().getAudience() + " seats)\n";
 		}
-		result += "Amount owed is " + totalAmount() / 100 + "￥ \n";
-		result += "You earned " + totalVolumeCredits() + " credits\n";
+		result += "Amount owed is " + data.getTotalAmount() / 100 + "￥ \n";
+		result += "You earned " + data.getVolumeCredits() + " credits\n";
 		return result;
 	}
+	
+	private ResultData createResultData() {
+        ResultData result = new ResultData();
+        result.setCustomer(invoicesMap.get("customer").toString());
+        List<Performances> performancesList = createPerformancesData();
+        result.setPerformances(performancesList);
+        result.setTotalAmount(totalAmount(result));
+        result.setVolumeCredits(totalVolumeCredits(result));
+        return result;
+    }
 
+	//创建数据结构
 	private List<Performances> createPerformancesData() {
 		List<Performances> performancesList = new ArrayList<>();
 		for (Invoices perf : (List<Invoices>) invoicesMap.get("performances")) {
-			performancesList.add(new Performances(playsMap.get(perf.getPlayID()), perf, amountFor(perf), 0));
+			Performances performances = new Performances(playsMap.get(perf.getPlayID()), perf, 0, 0);
+			performances.setAmount(amountFor(performances));
+			performancesList.add(performances);
 		}
 		return performancesList;
-
 	}
 
-	private int totalAmount() {
+	private int totalAmount(ResultData data) {
 		int result = 0;
-		for (Invoices perf : (List<Invoices>) invoicesMap.get("performances")) {
-			result += amountFor(perf);
+		for (Performances performances : data.getPerformances()) {
+		//for (Invoices perf : (List<Invoices>) invoicesMap.get("performances")) {
+			result += amountFor(performances);
 		}
 		return result;
 	}
 
-	private int totalVolumeCredits() {
+	private int totalVolumeCredits(ResultData data) {
 		int result = 0;
-		for (Invoices perf : (List<Invoices>) invoicesMap.get("performances")) {
-			result += volumeCreditsFor(perf);
+		//for (Invoices perf : (List<Invoices>) invoicesMap.get("performances")) {
+		for (Performances performances : data.getPerformances()) {
+			result += volumeCreditsFor(performances);
 		}
 		return result;
 	}
 
-	private int volumeCreditsFor(Invoices oPerformance) {
+	private int volumeCreditsFor(Performances performances) {
 		int result = 0;
-		result += Math.max(oPerformance.getAudience() - 30, 0);
-		if ("comedy".equals(playFor(oPerformance).getType()))
-			result += Math.floor(oPerformance.getAudience() / 5);
+		result += Math.max(performances.getPerf().getAudience() - 30, 0);
+		if ("comedy".equals(performances.getPlays().getType()))
+			result += Math.floor(performances.getPerf().getAudience() / 5);
 		return result;
 	}
 
+	/*
 	private Plays playFor(Invoices oPerformance) {
 		return playsMap.get(oPerformance.getPlayID());
 	}
+	*/
 
-	private int amountFor(Invoices oPerformance) {
+	private int amountFor(Performances performances) {
 		int result = 0;
-		switch (playFor(oPerformance).getType()) {
+		switch (performances.getPlays().getType()) {
 		case "tragedy":
 			result = 40000;
-			if (oPerformance.getAudience() > 30) {
-				result += 1000 * (oPerformance.getAudience() - 30);
+			if (performances.getPerf().getAudience() > 30) {
+				result += 1000 * (performances.getPerf().getAudience() - 30);
 			}
 			break;
 		case "comedy":
 			result = 30000;
-			if (oPerformance.getAudience() > 20) {
-				result += 10000 + 500 * (oPerformance.getAudience() - 20);
+			if (performances.getPerf().getAudience() > 20) {
+				result += 10000 + 500 * (performances.getPerf().getAudience() - 20);
 			}
-			result += 300 * oPerformance.getAudience();
+			result += 300 * performances.getPerf().getAudience();
 			break;
 		default:
 			throw new Error("unknown type");

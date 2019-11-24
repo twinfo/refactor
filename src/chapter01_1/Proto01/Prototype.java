@@ -30,64 +30,107 @@ public class Prototype {
 	}
 
 	public String statement() {
-        int totalAmount = 0;
-        int volumeCredits = 0;
-        String result = "Statement for " + invoicesMap.get("customer") + "\n";
-
+		String result = "Statement for " + invoicesMap.get("customer") + "\n"; 
         for (Invoices perf : (List<Invoices>) invoicesMap.get("performances")) {
-            Plays play = playsMap.get(perf.getPlayID());
-            //1.1 提炼函数：设置函数调用点
-            int thisAmount = amountFor(perf,play);
-            /*
-            int thisAmount = 0;
-            switch (play.getType()) {
-                case "tragedy":
-                    thisAmount = 40000;
-                    if (perf.getAudience() > 30) {
-                        thisAmount += 1000 * (perf.getAudience() - 30);
-                    }
-                    break;
-                case "comedy":
-                    thisAmount = 30000;
-                    if (perf.getAudience() > 20) {
-                        thisAmount += 10000 + 500 * (perf.getAudience() - 20);
-                    }
-                    thisAmount += 300 * perf.getAudience();
-                    break;
-                default:
-                    throw new Error("unknown type");
-            }
-            */
-            volumeCredits += Math.max(perf.getAudience() - 30, 0);
-            if ("comedy".equals(play.getType())) volumeCredits += Math.floor(perf.getAudience() / 5);
-            result += "  " +play.getName() + ": " + thisAmount / 100 + "￥(" + perf.getAudience() + " seats)\n";
-            totalAmount += thisAmount;
+            result += "  " +playFor(perf).getName() + ": " + amountFor(perf) / 100 + "￥(" + perf.getAudience() + " seats)\n";
         }
-        result += "Amount owed is " + totalAmount / 100 + "￥ \n";
-        result += "You earned " + volumeCredits + " credits\n";
+        result += "Amount owed is " + totalAmount() / 100 + "￥ \n";
+        result += "You earned " +  totalVolumeCredits() + " credits\n";
         return result;
+		// 5.2.a 拆分循环 5.2.c 提炼函数并内联
+        //int totalAmount = appleSauce();
+       // int totalAmount = 0;
+       // for (Invoices perf : (List<Invoices>) invoicesMap.get("performances")) {
+        	//4.从表达式右边提炼函数playFor
+        	//Plays play = playFor(perf);
+            //1.1 提炼函数：设置函数调用点
+           // int thisAmount = amountFor(perf, playFor(perf)); // 4.2 “以查询取代临时变量”
+            //4.3.2 将函数接口中的参数删除
+        	//int thisAmount = amountFor(perf); //3.4用内联变量方法去除临时变量
+           // volumeCredits += Math.max(perf.getAudience() - 30, 0);
+            // 4.2 “以查询取代临时变量”
+           // if ("comedy".equals(playFor(perf).getType())) volumeCredits += Math.floor(perf.getAudience() / 5);
+        	// 5.1 提炼循环体内语句为函数
+        	//volumeCredits += volumeCreditsFor(perf); // 5.2拆分循环
+        	// 4.2 “以查询取代临时变量”
+            //totalAmount += amountFor(perf);
+       // }
+        // 5.2.a 拆分循环  5.2.c 提炼函数并内联
+       // String result = "Statement for " + invoicesMap.get("customer") + "\n";
+       // for (Invoices perf : (List<Invoices>) invoicesMap.get("performances")) {
+       //     result += "  " +playFor(perf).getName() + ": " + amountFor(perf) / 100 + "￥(" + perf.getAudience() + " seats)\n";
+       // }
+        // 5.2.a 拆分循环
+        //int volumeCredits = 0;
+        //for (Invoices perf : (List<Invoices>) invoicesMap.get("performances")) {
+       //    	volumeCredits += volumeCreditsFor(perf);
+       // }
+        // 5.2.b 提炼函数并内联
+        //int volumeCredits = totalVolumeCredits();
+        //result += "Amount owed is " + totalAmount() / 100 + "￥ \n";
+        //result += "You earned " +  totalVolumeCredits() + " credits\n";
+        //return result;
     }
-	//1.提炼函数
-	private int  amountFor(Invoices perf, Plays play) {
-		int thisAmount = 0;
-        switch (play.getType()) {
-            case "tragedy":
-                thisAmount = 40000;
-                if (perf.getAudience() > 30) {
-                    thisAmount += 1000 * (perf.getAudience() - 30);
-                }
-                break;
-            case "comedy":
-                thisAmount = 30000;
-                if (perf.getAudience() > 20) {
-                    thisAmount += 10000 + 500 * (perf.getAudience() - 20);
-                }
-                thisAmount += 300 * perf.getAudience();
-                break;
-            default:
-                throw new Error("unknown type");
+	
+	// 函数改名为：totalAmount
+	//private int appleSauce() {
+	private int totalAmount() {
+		int result = 0;  // totalAmount 改名为 result
+        for (Invoices perf : (List<Invoices>) invoicesMap.get("performances")) {
+        	result += amountFor(perf);
         }
-		return thisAmount;
+		return result;
+	}
+
+	//5.2.b “提炼函数”并内联
+	private int totalVolumeCredits() {
+		int result = 0; // volumeCredits 改名为 result
+        for (Invoices perf : (List<Invoices>) invoicesMap.get("performances")) {
+        	result += volumeCreditsFor(perf);
+        }
+		return result;
+	}
+	
+	// 5.1 提炼循环体内语句为函数
+	private int volumeCreditsFor(Invoices oPerformance) {
+		int result = 0;
+		result += Math.max(oPerformance.getAudience() - 30, 0);
+        if ("comedy".equals(playFor(oPerformance).getType())) 
+        	result += Math.floor(oPerformance.getAudience() / 5);
+		return result;
+	}
+
+	//3 从表达式右边提炼函数，注意接口变量的命名规则
+	private Plays playFor(Invoices oPerformance) {
+		return playsMap.get(oPerformance.getPlayID());
+	}
+
+	// 1.提炼函数
+	// 4.3.1 在amountFor函数内部使用新提炼的函数  play 替换为 playFor(oPerformance)
+	// 4.3.2 将函数接口中的参数play删除
+	//private int amountFor(Invoices oPerformance, Plays play)  { // 3.函数参数改名：perf -- oPerformance
+	private int amountFor(Invoices oPerformance)  {
+		//2.变量改名：thisAmount 改名为 result
+		int result = 0;
+		switch (playFor(oPerformance).getType()) { // 4.3.1
+		    case "tragedy":
+		        result = 40000;
+		        if (oPerformance.getAudience() > 30) {
+		            result += 1000 * (oPerformance.getAudience() - 30);
+		        }
+		        break;
+		    case "comedy":
+		        result = 30000;
+		        if (oPerformance.getAudience() > 20) {
+		            result += 10000 + 500 * (oPerformance.getAudience() - 20);
+		        }
+		        result += 300 * oPerformance.getAudience();
+		        break;
+		    default:
+		        throw new Error("unknown type");
 		}
+		return result;
+	}
+
 }
 

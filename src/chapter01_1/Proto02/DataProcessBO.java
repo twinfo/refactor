@@ -10,8 +10,15 @@ public class DataProcessBO {
 	private Map<String, Plays> playsMap = new HashMap<>();
 	private Map<String, Object> invoicesMap = new HashMap<>();
 	
-	public DataProcessBO() {
-		initData();
+	//µ¥ÀýÄ£Ê½
+	private static DataProcessBO dataBO = new DataProcessBO();
+	
+	public static DataProcessBO getInstance() {
+		return dataBO;
+	}
+	
+	private DataProcessBO() {
+			initData();
 	}
 	
 	private void initData() {
@@ -73,12 +80,6 @@ public class DataProcessBO {
 			result += Math.floor(performances.getPerf().getAudience() / 5);
 		return result;
 	}
-
-	/*
-	private Plays playFor(Invoices oPerformance) {
-		return playsMap.get(oPerformance.getPlayID());
-	}
-	*/
 
 	private int amountFor(Performances performances) {
 		int result = 0;

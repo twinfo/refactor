@@ -7,18 +7,14 @@ import java.util.List;
 import java.util.Map;
 
 public class Prototype {
-	private DataProcessBO dataBO;
 	public static void main(String[] args) {
 		Prototype prototype = new Prototype();
 		System.out.println(prototype.statement());
 	}
 
-	
-
 	//准备数据，传递给renderPlainText
 	public String statement() {
-		dataBO = new DataProcessBO();
-		return renderPlainText(dataBO.createResultData());
+		return renderPlainText(DataProcessBO.getInstance().createResultData());
 	}
 
 	// 替换原有调用点
